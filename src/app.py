@@ -1,55 +1,29 @@
 import os
 
-import psycopg2
 from flask import Flask, jsonify
+from sqlalchemy.orm import Session
 
+from database import get_db, init_db
+from database.models import User
+
+init_db()
 app = Flask(__name__)
-
-# Database connection
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", "postgresql://postgres:postgres@db:5432/aristocratii")
-
-
-def get_db_connection():
-    conn = psycopg2.connect(DATABASE_URL)
-    return conn
-
-
-with get_db_connection() as conn:
-    with conn.cursor() as cur:
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS messages (
-                id SERIAL PRIMARY KEY,
-                text VARCHAR(255) NOT NULL
-            )
-        """)
-        cur.execute(
-            "INSERT INTO messages (text) VALUES ('Hello from PostgreSQL!') ON CONFLICT DO NOTHING;"
-        )
-        conn.commit()
 
 
 @app.route('/')
 def hello_world():
-    with get_db_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT text FROM messages LIMIT 1;")
-            message = cur.fetchone()
-    return jsonify({"message": message})
+    db: Session = get_db()
+    user = User(username="test", password="test")
+    db.add(user)
+    user = db.query(User).filter(User.username == "test").first()
+    name = user.username
+
+    return jsonify({"message": f"Hello, {name}!"})
 
 
 @app.route('/all')
 def all():
-    with get_db_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT id, text FROM messages;")
-            message = cur.fetchall()
-
-    return jsonify(
-        {"messages": [{
-            "id": i,
-            "text": m
-        } for i, m in enumerate(message)]})
+    return jsonify({"message": "All users"})
 
 
 if __name__ == "__main__":
