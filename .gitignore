@@ -171,6 +171,7 @@ poetry.toml
 .ruff_cache/
 Pipfile
 Pipfile.lock
+.envrc
 
 # LSP config files
 pyrightconfig.json
