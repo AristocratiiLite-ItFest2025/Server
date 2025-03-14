@@ -15,7 +15,6 @@ def get_db_connection():
     return conn
 
 
-# Create a table and insert sample data
 with get_db_connection() as conn:
     with conn.cursor() as cur:
         cur.execute("""
@@ -43,7 +42,7 @@ def hello_world():
 def all():
     with get_db_connection() as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT * FROM messages;")
+            cur.execute("SELECT id, text FROM messages;")
             message = cur.fetchall()
 
     return jsonify(
