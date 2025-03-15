@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from time import time
-
+from flask_cors import CORS
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, emit, join_room, leave_room, send
 from sqlalchemy.orm import Session
@@ -11,6 +11,7 @@ from database.models import Chat, Entry, Event, User
 
 init_db()
 app = Flask(__name__)
+CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 
@@ -164,6 +165,24 @@ def create_chat():
     db.commit()
     return jsonify(chat.to_dict())
 
+@app.post('/register')
+def register_user():
+    db: Session = get_db()
+    data = json.loads(request.data)
+    user = User(**data)
+    db.add(user)
+    db.commit()
+    return jsonify(user.to_dict())
+
+@app.post('/login')
+def login_user():
+    db: Session = get_db()
+    data = json.loads(request.data)
+    user = db.query(User).filter(User.username == data["username"]).first()
+    if user and user.password == data["password"]:
+        return jsonify(user.to_dict())
+    else:
+        return jsonify({"error": "Invalid credentials"}), 401
 
 if __name__ == "__main__":
     socketio.run(app,
