@@ -3,8 +3,8 @@ import os
 from flask import Flask, jsonify
 from sqlalchemy.orm import Session
 
-from src.database import get_db, init_db
-from src.database.models import User
+from database import get_db, init_db
+from database.models import User
 
 init_db()
 app = Flask(__name__)
