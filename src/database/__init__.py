@@ -14,6 +14,7 @@ class Base(DeclarativeBase):
 
 
 engine = create_engine(DATABASE_URL)
+queues = {}
 SessionLocal = sessionmaker(bind=engine)
 
 
