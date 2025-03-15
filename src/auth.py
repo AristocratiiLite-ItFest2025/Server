@@ -4,9 +4,9 @@ import bcrypt
 from flask import Flask, jsonify, request
 from sqlalchemy.orm import Session
 
-from src import default
 from database import get_db
 from database.models import User
+from src import app
 
 
 @app.post('/register')
