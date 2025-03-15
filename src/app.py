@@ -1,5 +1,4 @@
 import json
-import logging
 from datetime import datetime
 from time import time
 from flask_cors import CORS
@@ -31,9 +30,12 @@ def handle_message(data):
     db.add(db_message)
     db.commit()
 
-    user = db.query(User).filter(User.id == user_id).first()
-    username = user.username
-    send(f"{username}: {text}", to=room)
+    entry = db_message.to_dict()
+    entry["username"] = db.query(User)\
+                          .filter(User.id == user_id)\
+                          .first().username
+
+    send(str(entry), to=room)
 
 
 @socketio.on('join')
@@ -224,4 +226,4 @@ if __name__ == "__main__":
                  port=5000,
                  debug=True,
                  allow_unsafe_werkzeug=True)
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True, cors_allowed_origins="*")
