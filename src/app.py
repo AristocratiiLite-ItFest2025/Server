@@ -1,19 +1,27 @@
-import os
-from datetime import datetime, timedelta
 import json
+
 from flask import Flask, jsonify, request
+from flask_socketio import SocketIO
 from sqlalchemy.orm import Session
 
 from database import get_db, init_db
-from database.models import User, Chat, Entry, Event
+from database.models import Chat, Entry, Event, User
 
 init_db()
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+
+@socketio.on('message', namespace='/chat')
+def chat_message(message):
+    print('received message: ' + message)
+    socketio.emit('message', message, namespace='/chat')
 
 
 @app.route('/all')
 def all():
     return jsonify({"message": "All users"})
+
 
 @app.get('/users')
 def get_users():
@@ -21,11 +29,13 @@ def get_users():
     users = db.query(User).all()
     return jsonify([user.to_dict() for user in users])
 
+
 @app.get('/events')
 def get_events():
     db: Session = get_db()
     events = db.query(Event).all()
     return jsonify([event.to_dict() for event in events])
+
 
 @app.get('/chats')
 def get_chats():
@@ -33,11 +43,13 @@ def get_chats():
     chats = db.query(Chat).all()
     return jsonify([chat.to_dict() for chat in chats])
 
+
 @app.get('/entries')
 def get_entries():
     db: Session = get_db()
     entries = db.query(Entry).all()
     return jsonify([entry.to_dict() for entry in entries])
+
 
 @app.get('/users/<int:user_id>')
 def get_user(user_id):
@@ -48,6 +60,7 @@ def get_user(user_id):
     else:
         return jsonify({"error": "User not found"}), 404
 
+
 @app.get('/events/<int:event_id>')
 def get_event(event_id):
     db: Session = get_db()
@@ -56,6 +69,7 @@ def get_event(event_id):
         return jsonify(event.to_dict())
     else:
         return jsonify({"error": "Event not found"}), 404
+
 
 @app.get('/chats/<int:chat_id>')
 def get_chat(chat_id):
@@ -66,6 +80,7 @@ def get_chat(chat_id):
     else:
         return jsonify({"error": "Chat not found"}), 404
 
+
 @app.get('/entries/<int:chat_id>')
 def get_entries_by_chat(chat_id):
     db: Session = get_db()
@@ -74,6 +89,7 @@ def get_entries_by_chat(chat_id):
         return jsonify([entry.to_dict() for entry in entries])
     else:
         return jsonify({"error": "No entries found for this chat"}), 404
+
 
 @app.post('/users')
 def create_user():
@@ -84,6 +100,7 @@ def create_user():
     db.commit()
     return jsonify(user.to_dict())
 
+
 @app.post('/events')
 def create_event():
     db: Session = get_db()
@@ -92,6 +109,7 @@ def create_event():
     db.add(event)
     db.commit()
     return jsonify(event.to_dict())
+
 
 @app.post('/entries')
 def create_entry():
@@ -109,6 +127,7 @@ def create_entry():
 
     return jsonify(entry.to_dict())
 
+
 @app.post('/chats')
 def create_chat():
     db: Session = get_db()
@@ -120,5 +139,5 @@ def create_chat():
 
 
 if __name__ == "__main__":
-    
+
     app.run(host="0.0.0.0", port=5000, debug=True)
