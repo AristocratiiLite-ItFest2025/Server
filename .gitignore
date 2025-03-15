@@ -172,6 +172,7 @@ poetry.toml
 Pipfile
 Pipfile.lock
 pyproject.toml
+poetry.lock
 .envrc
 
 # LSP config files
