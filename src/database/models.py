@@ -1,11 +1,17 @@
-from sqlalchemy import inspect, Enum, VARCHAR, Column, Integer, Float, Boolean, ForeignKey, Text, DateTime
+from sqlalchemy import (VARCHAR, Boolean, Column, DateTime, Enum, Float,
+                        ForeignKey, Integer, Text, inspect)
 
 from database import Base
 
+
 class SerializableMixin:
+
     def to_dict(self):
-        return {c.key: getattr(self, c.key)
-                for c in inspect(self).mapper.column_attrs}
+        return {
+            c.key: getattr(self, c.key)
+            for c in inspect(self).mapper.column_attrs
+        }
+
 
 class User(Base, SerializableMixin):
     __tablename__ = 'users'
@@ -14,7 +20,8 @@ class User(Base, SerializableMixin):
     password = Column(VARCHAR(255), nullable=False)
     email = Column(VARCHAR(255), nullable=False)
     bani_sold = Column(Float, default=0.0)
-    isVerified = Column(Enum('NGO', 'SPONSOR', 'PERSON', name='user_type'), nullable=False)
+    isVerified = Column(Enum('NGO', 'SPONSOR', 'PERSON', name='user_type'),
+                        nullable=False)
     isPublic = Column(Boolean, default=False)
     avatar_image = Column(VARCHAR(255))
     chat_id = Column(Integer, ForeignKey('chats.id'))
@@ -26,16 +33,20 @@ class Event(Base, SerializableMixin):
     lat = Column(Float, nullable=False)
     lon = Column(Float, nullable=False)
     name = Column(VARCHAR(255), nullable=False)
-    attendees = Column(Integer, default=1)  # This should be a relationship in a real-world scenario
+    attendees = Column(
+        Integer,
+        default=1)  # This should be a relationship in a real-world scenario
     description = Column(Text, nullable=False)
     author_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    email_for_contact = Column(VARCHAR(255),nullable=True)
-    phone_contact = Column(VARCHAR(255),nullable=True)
+    email_for_contact = Column(VARCHAR(255), nullable=True)
+    phone_contact = Column(VARCHAR(255), nullable=True)
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=False)
     image = Column(VARCHAR(255))
     icon_image = Column(VARCHAR(255))
-    recurring_duration = Column(VARCHAR(255))  # This should be handled with a library for recurrence
+    recurring_duration = Column(
+        VARCHAR(255))  # This should be handled with a library for recurrence
+
 
 class Chat(Base, SerializableMixin):
     __tablename__ = 'chats'
@@ -53,4 +64,3 @@ class Entry(Base, SerializableMixin):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     timestamp = Column(DateTime, nullable=False)
     text = Column(Text, nullable=False)
-
