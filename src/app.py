@@ -17,15 +17,14 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 @socketio.on('message')
 def handle_message(data):
-    data_json = json.loads(data)
-    user_id = data_json["user_id"]
-    room = data_json["chat_id"]
-    text = data_json["text"]
+    user_id = data["user_id"]
+    room = data["chat_id"]
+    text = data["text"]
 
-    db_message = Entry(chat_id=data_json["chat_id"],
-                       user_id=data_json["user_id"],
+    db_message = Entry(chat_id=data["chat_id"],
+                       user_id=data["user_id"],
                        timestamp=datetime.now(),
-                       text=data_json["text"])
+                       text=data["text"])
 
     db = get_db()
     db.add(db_message)
@@ -38,16 +37,14 @@ def handle_message(data):
 
 @socketio.on('join')
 def on_join(data):
-    data_json = json.loads(data)
-    room = data_json["chat_id"]
+    room = data["chat_id"]
 
     join_room(room)
 
 
 @socketio.on('leave')
 def on_leave(data):
-    data_json = json.loads(data)
-    room = data_json["chat_id"]
+    room = data["chat_id"]
 
     leave_room(room)
 
