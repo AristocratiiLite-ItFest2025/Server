@@ -41,7 +41,7 @@ class Chat(Base, SerializableMixin):
     __tablename__ = 'chats'
     id = Column(Integer, primary_key=True)
     last_message_timestamp = Column(DateTime)
-    last_message = Column(Text)
+    last_message = Column(Integer, ForeignKey('entries.id'))
     name = Column(VARCHAR(255), nullable=False)
     chat_image = Column(VARCHAR(255))
 
