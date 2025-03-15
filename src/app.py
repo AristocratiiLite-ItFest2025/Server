@@ -18,7 +18,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 @socketio.on('message')
 def handle_message(data):
     data_json = json.loads(data)
-    username = data_json["username"]
+    user_id = data_json["user_id"]
     room = data_json["chat_id"]
     text = data_json["text"]
 
@@ -31,6 +31,8 @@ def handle_message(data):
     db.add(db_message)
     db.commit()
 
+    user = db.query(User).filter(User.id == user_id).first()
+    username = user.username
     send(f"{username}: {text}", to=room)
 
 
@@ -148,7 +150,7 @@ def create_entry():
 
     chat = db.query(Chat).filter(Chat.id == entry.chat_id).first()
     if chat:
-        chat.last_message = entry
+        chat.last_message = entry.text
         db.commit()
 
     return jsonify(entry.to_dict())

@@ -68,8 +68,7 @@ class Event(Base, SerializableMixin):
 class Chat(Base, SerializableMixin):
     __tablename__ = 'chats'
     id = Column(Integer, primary_key=True)
-    last_message_id = Column(Integer, ForeignKey('entries.id'), nullable=True)
-    last_message = relationship('Entry', foreign_keys=[last_message_id])
+    last_message = Column(VARCHAR(255), nullable=True)
     name = Column(VARCHAR(255), nullable=False)
     chat_image = Column(VARCHAR(255))
 
