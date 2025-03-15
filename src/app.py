@@ -2,7 +2,7 @@ import json
 import logging
 from datetime import datetime
 from time import time
-
+from flask_cors import CORS
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, emit, join_room, leave_room, send
 from sqlalchemy.orm import Session
@@ -12,6 +12,7 @@ from database.models import Chat, Entry, Event, User
 
 init_db()
 app = Flask(__name__)
+CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 
