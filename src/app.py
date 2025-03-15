@@ -162,6 +162,24 @@ def create_chat():
     db.commit()
     return jsonify(chat.to_dict())
 
+@app.post('/register')
+def register_user():
+    db: Session = get_db()
+    data = json.loads(request.data)
+    user = User(**data)
+    db.add(user)
+    db.commit()
+    return jsonify(user.to_dict())
+
+@app.post('/login')
+def login_user():
+    db: Session = get_db()
+    data = json.loads(request.data)
+    user = db.query(User).filter(User.username == data["username"]).first()
+    if user and user.password == data["password"]:
+        return jsonify(user.to_dict())
+    else:
+        return jsonify({"error": "Invalid credentials"}), 401
 
 if __name__ == "__main__":
     socketio.run(app,
