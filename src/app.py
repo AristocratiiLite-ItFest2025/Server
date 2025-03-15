@@ -1,7 +1,10 @@
 import json
+import logging
+from datetime import datetime
+from time import time
 
 from flask import Flask, jsonify, request
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit, join_room, leave_room, send
 from sqlalchemy.orm import Session
 
 from database import get_db, init_db
@@ -12,15 +15,39 @@ app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 
-@socketio.on('message', namespace='/chat')
-def chat_message(message):
-    print('received message: ' + message)
-    socketio.emit('message', message, namespace='/chat')
+@socketio.on('message')
+def handle_message(data):
+    data_json = json.loads(data)
+    username = data_json["username"]
+    room = data_json["chat_id"]
+    text = data_json["text"]
+
+    db_message = Entry(chat_id=data_json["chat_id"],
+                       user_id=data_json["user_id"],
+                       timestamp=datetime.now(),
+                       text=data_json["text"])
+
+    db = get_db()
+    db.add(db_message)
+    db.commit()
+
+    send(f"{username}: {text}", to=room)
 
 
-@app.route('/all')
-def all():
-    return jsonify({"message": "All users"})
+@socketio.on('join')
+def on_join(data):
+    data_json = json.loads(data)
+    room = data_json["chat_id"]
+
+    join_room(room)
+
+
+@socketio.on('leave')
+def on_leave(data):
+    data_json = json.loads(data)
+    room = data_json["chat_id"]
+
+    leave_room(room)
 
 
 @app.get('/users')
@@ -121,8 +148,7 @@ def create_entry():
 
     chat = db.query(Chat).filter(Chat.id == entry.chat_id).first()
     if chat:
-        chat.last_message = entry.text
-        chat.last_message_timestamp = entry.timestamp
+        chat.last_message = entry
         db.commit()
 
     return jsonify(entry.to_dict())
@@ -139,5 +165,9 @@ def create_chat():
 
 
 if __name__ == "__main__":
-
+    socketio.run(app,
+                 host="0.0.0.0",
+                 port=5000,
+                 debug=True,
+                 allow_unsafe_werkzeug=True)
     app.run(host="0.0.0.0", port=5000, debug=True)
