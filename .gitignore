@@ -169,8 +169,7 @@ poetry.toml
 
 # ruff
 .ruff_cache/
-Pipfile
-Pipfile.lock
+pyproject.toml
 .envrc
 
 # LSP config files
