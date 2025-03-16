@@ -17,8 +17,8 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 @socketio.on('message')
 def handle_message(data):
     user_id = data["user_id"]
-    room = data["chat_id"]
-    text = data["text"]
+    chat_id = data["chat_id"]
+    room = f"CHAT{chat_id}"
 
     db_message = Entry(chat_id=data["chat_id"],
                        user_id=data["user_id"],
@@ -41,12 +41,13 @@ def handle_message(data):
     chat = db.query(Chat).filter(Chat.id == room).first()
     for participant in chat.participants:
         if participant.id != user_id:
-            send(entry_json, to=participant.id)
+            send(entry_json, to=f"USER{participant.id}")
 
 
 @socketio.on('join')
 def on_join(data):
-    room = data["chat_id"]
+    chat_id = data["chat_id"]
+    room = f"CHAT{chat_id}"
 
     join_room(room)
     send("User joined", to=room)
@@ -54,7 +55,8 @@ def on_join(data):
 
 @socketio.on('leave')
 def on_leave(data):
-    room = data["chat_id"]
+    chat_id = data["chat_id"]
+    room = f"CHAT{chat_id}"
 
     leave_room(room)
 
@@ -62,15 +64,17 @@ def on_leave(data):
 @socketio.on('listen')
 def listen_chats(data):
     user_id = data["user_id"]
+    room = f"USER{user_id}"
+
     db = get_db()
     chats = db.query(Chat).filter(
         Chat.participants.any(User.id == user_id)).all()
 
+    join_room(room)
+
     for chat in chats:
         json_chat = json.dumps(chat.to_dict())
-        send(json_chat, to=user_id)
-
-    join_room(user_id)
+        send(json_chat, to=room)
 
 
 @app.get('/users')
@@ -196,11 +200,11 @@ def register_user():
         except json.JSONDecodeError:
             return jsonify({"error": "Invalid JSON format"}), 400
 
-
         required_fields = ['username', 'password', 'email', 'isVerified']
         for field in required_fields:
             if field not in data:
-                return jsonify({"error": f"Missing required field: {field}"}), 400
+                return jsonify({"error":
+                                f"Missing required field: {field}"}), 400
 
         try:
             user = User(**data)
@@ -210,7 +214,8 @@ def register_user():
         except Exception as e:
             db.rollback()
             # Check for duplicate username constraint violation
-            if "unique constraint" in str(e).lower() and "username" in str(e).lower():
+            if "unique constraint" in str(e).lower() and "username" in str(
+                    e).lower():
                 return jsonify({"error": "Username already exists"}), 409
             return jsonify({"error": f"Database error: {str(e)}"}), 500
     except Exception as e:
@@ -228,10 +233,12 @@ def login_user():
 
         # Check required fields
         if "username" not in data or "password" not in data:
-            return jsonify({"error": "Username and password are required"}), 400
+            return jsonify({"error":
+                            "Username and password are required"}), 400
 
         try:
-            user = db.query(User).filter(User.username == data["username"]).first()
+            user = db.query(User).filter(
+                User.username == data["username"]).first()
             if user and user.password == data["password"]:
                 return jsonify(user.to_dict())
             else:
@@ -240,8 +247,6 @@ def login_user():
             return jsonify({"error": f"Database error: {str(e)}"}), 500
     except Exception as e:
         return jsonify({"error": f"Server error: {str(e)}"}), 500
-
-
 
 
 if __name__ == "__main__":
