@@ -189,23 +189,59 @@ def create_chat():
 
 @app.post('/register')
 def register_user():
-    db: Session = get_db()
-    data = json.loads(request.data)
-    user = User(**data)
-    db.add(user)
-    db.commit()
-    return jsonify(user.to_dict())
+    try:
+        db: Session = get_db()
+        try:
+            data = json.loads(request.data)
+        except json.JSONDecodeError:
+            return jsonify({"error": "Invalid JSON format"}), 400
+
+
+        required_fields = ['username', 'password', 'email', 'isVerified']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({"error": f"Missing required field: {field}"}), 400
+
+        try:
+            user = User(**data)
+            db.add(user)
+            db.commit()
+            return jsonify(user.to_dict())
+        except Exception as e:
+            db.rollback()
+            # Check for duplicate username constraint violation
+            if "unique constraint" in str(e).lower() and "username" in str(e).lower():
+                return jsonify({"error": "Username already exists"}), 409
+            return jsonify({"error": f"Database error: {str(e)}"}), 500
+    except Exception as e:
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 
 @app.post('/login')
 def login_user():
-    db: Session = get_db()
-    data = json.loads(request.data)
-    user = db.query(User).filter(User.username == data["username"]).first()
-    if user and user.password == data["password"]:
-        return jsonify(user.to_dict())
-    else:
-        return jsonify({"error": "Invalid credentials"}), 401
+    try:
+        db: Session = get_db()
+        try:
+            data = json.loads(request.data)
+        except json.JSONDecodeError:
+            return jsonify({"error": "Invalid JSON format"}), 400
+
+        # Check required fields
+        if "username" not in data or "password" not in data:
+            return jsonify({"error": "Username and password are required"}), 400
+
+        try:
+            user = db.query(User).filter(User.username == data["username"]).first()
+            if user and user.password == data["password"]:
+                return jsonify(user.to_dict())
+            else:
+                return jsonify({"error": "Invalid credentials"}), 401
+        except Exception as e:
+            return jsonify({"error": f"Database error: {str(e)}"}), 500
+    except Exception as e:
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
+
+
 
 
 if __name__ == "__main__":
