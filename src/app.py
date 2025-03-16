@@ -30,10 +30,6 @@ def handle_message(data):
     db.commit()
 
     entry = db_message.to_dict()
-    entry["username"] = db.query(User)\
-                          .filter(User.id == user_id)\
-                          .first().username
-    entry["timestamp"] = entry["timestamp"].isoformat()
 
     entry_json = json.dumps(entry)
     send(entry_json, to=room)
@@ -48,6 +44,18 @@ def handle_message(data):
 def on_join(data):
     chat_id = data["chat_id"]
     room = f"CHAT{chat_id}"
+
+    db = get_db()
+    chat = db.query(Chat).filter(Chat.id == chat_id).first()
+    if not chat:
+        print(f"Chat {chat_id} not found")
+        chat = Chat(id=chat_id, name=f"Chat {chat_id}")
+
+    chat.participants.append(
+        db.query(User).filter(User.id == data["user_id"]).first())
+
+    db.add(chat)
+    db.commit()
 
     join_room(room)
 
