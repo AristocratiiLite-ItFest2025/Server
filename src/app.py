@@ -120,7 +120,7 @@ def handle_message(data):
     entry_json = json.dumps(entry)
     send(entry_json, to=room)
 
-    chat = db.query(Chat).filter(Chat.id == room).first()
+    chat = db.query(Chat).filter(Chat.id == chat_id).first()
     for participant in chat.participants:
         if participant.id != user_id:
             send(entry_json, to=f"USER{participant.id}")
