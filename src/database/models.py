@@ -108,6 +108,5 @@ class Entry(Base, SerializableMixin):
 
     def to_dict(self):
         data = super().to_dict()
-        db = get_db()
         data["timestamp"]= data["timestamp"].isoformat()
         return data
