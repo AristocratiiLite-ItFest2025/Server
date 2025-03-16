@@ -87,6 +87,7 @@ def get_users():
 def get_events():
     db: Session = get_db()
     data = json.loads(request.data)
+
     user = db.query(User).filter(User.id == data["user_id"]).first()
     events = db.query(Event).filter(Event.attendees.contains(user)).all()
 

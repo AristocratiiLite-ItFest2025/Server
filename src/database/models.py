@@ -43,10 +43,13 @@ class User(Base, SerializableMixin):
         Integer, ForeignKey('chats.id'),
         nullable=True)  # Can be removed since we now have many-to-many
 
-    # Relationship with chats
     chats = relationship('Chat',
                          secondary=chat_participants,
                          back_populates='participants')
+
+    events = relationship('Event',
+                          secondary=event_attendees,
+                          back_populates='attendees')
 
 
 class Event(Base, SerializableMixin):
