@@ -70,6 +70,9 @@ class Event(Base, SerializableMixin):
         data = super().to_dict()
         data["attendees_count"] = self.attendees_count
         data["attendees"] = [attendee.id for attendee in self.attendees]
+
+        data["start_time"] = data["start_time"].isoformat()
+        data["end_time"] = data["end_time"].isoformat()
         return data
 
     description = Column(Text, nullable=False)
