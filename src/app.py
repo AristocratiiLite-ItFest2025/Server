@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from time import time
-from flask_cors import CORS
+
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, emit, join_room, leave_room, send
 from sqlalchemy.orm import Session
@@ -11,7 +11,6 @@ from database.models import Chat, Entry, Event, User
 
 init_db()
 app = Flask(__name__)
-CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 
@@ -34,8 +33,15 @@ def handle_message(data):
     entry["username"] = db.query(User)\
                           .filter(User.id == user_id)\
                           .first().username
+    entry["timestamp"] = entry["timestamp"].isoformat()
 
-    send(str(entry), to=room)
+    entry_json = json.dumps(entry)
+    send(entry_json, to=room)
+
+    chat = db.query(Chat).filter(Chat.id == room).first()
+    for participant in chat.participants:
+        if participant.id != user_id:
+            send(entry_json, to=participant.id)
 
 
 @socketio.on('join')
@@ -43,6 +49,7 @@ def on_join(data):
     room = data["chat_id"]
 
     join_room(room)
+    send("User joined", to=room)
 
 
 @socketio.on('leave')
@@ -50,6 +57,20 @@ def on_leave(data):
     room = data["chat_id"]
 
     leave_room(room)
+
+
+@socketio.on('listen')
+def listen_chats(data):
+    user_id = data["user_id"]
+    db = get_db()
+    chats = db.query(Chat).filter(
+        Chat.participants.any(User.id == user_id)).all()
+
+    for chat in chats:
+        json_chat = json.dumps(chat.to_dict())
+        send(json_chat, to=user_id)
+
+    join_room(user_id)
 
 
 @app.get('/users')
@@ -165,6 +186,7 @@ def create_chat():
     db.commit()
     return jsonify(chat.to_dict())
 
+
 @app.post('/register')
 def register_user():
     db: Session = get_db()
@@ -173,6 +195,7 @@ def register_user():
     db.add(user)
     db.commit()
     return jsonify(user.to_dict())
+
 
 @app.post('/login')
 def login_user():
@@ -183,6 +206,7 @@ def login_user():
         return jsonify(user.to_dict())
     else:
         return jsonify({"error": "Invalid credentials"}), 401
+
 
 if __name__ == "__main__":
     socketio.run(app,
