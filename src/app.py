@@ -83,15 +83,13 @@ def get_users():
     return jsonify([user.to_dict() for user in users])
 
 
-@app.get('/events')
-def get_events():
+@app.get('/events/<int:user_id>')
+def get_events(user_id):
     db: Session = get_db()
-    data = json.loads(request.data)
 
-    user = db.query(User).filter(User.id == data["user_id"]).first()
-    events = db.query(Event).filter(Event.attendees.contains(user)).all()
+    user = db.query(User).filter(User.id == user_id).first()
 
-    return jsonify([event.to_dict() for event in events])
+    return jsonify([event.to_dict() for event in user.events])
 
 
 @app.get('/chats')
