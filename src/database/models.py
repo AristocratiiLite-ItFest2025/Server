@@ -66,8 +66,7 @@ class Event(Base, SerializableMixin):
 
     @hybrid_property
     def attendees_count(self):
-        return (select(func.count(event_attendees.c.user_id)).where(
-            event_attendees.c.event_id == self.id).scalar_subquery())
+        return len(self.attendees)
 
     def to_dict(self):
         data = super().to_dict()
