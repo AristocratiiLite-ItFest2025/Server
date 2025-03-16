@@ -64,16 +64,11 @@ class Event(Base, SerializableMixin):
                              secondary='event_attendees',
                              back_populates='events')
 
-    @hybrid_property
+    @property
     def attendees_count(self):
-        return object_session(self).query(event_attendees).filter(
-            event_attendees.c.event_id == self.id).count()
-
-    @attendees_count.expression
-    def attendees_count(cls):
-        return select([
-            func.count(event_attendees.c.user_id)
-        ]).where(event_attendees.c.event_id == cls.id).label('attendees_count')
+        if self.attendees is None:
+            return 0
+        return len(self.attendees)
 
     def to_dict(self):
         data = super().to_dict()
