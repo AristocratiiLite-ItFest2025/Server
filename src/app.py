@@ -137,8 +137,8 @@ def on_join(data):
         print(f"Chat {chat_id} not found")
         chat = Chat(id=chat_id, name=f"Chat {chat_id}")
 
-    chat.participants.append(
-        db.query(User).filter(User.id == data["user_id"]).first())
+    if data["user_id"] not in [p.id for p in chat.participants]:
+        chat.participants.append( db.query(User).filter(User.id == data["user_id"]).first())
 
     db.add(chat)
     db.commit()
