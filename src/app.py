@@ -1,9 +1,10 @@
 import json
-from datetime import datetime
-from time import time
 import os
-from pprint import pprint
 import uuid
+from datetime import datetime
+from pprint import pprint
+from time import time
+
 from flask import Flask, jsonify, request, send_file
 from flask_socketio import SocketIO, emit, join_room, leave_room, send
 from sqlalchemy.orm import Session, column_property
@@ -20,9 +21,11 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 @app.post('/upload-image')
 def upload_image():
@@ -41,7 +44,6 @@ def upload_image():
             # Create a secure unique filename
             original_extension = file.filename.rsplit('.', 1)[1].lower()
             unique_filename = f"{uuid.uuid4().hex}.{original_extension}"
-
 
             # Save the file
             file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
@@ -71,6 +73,7 @@ def list_images():
     except Exception as e:
         return jsonify({"error": f"Server error: {str(e)}"}), 500
 
+
 # Add a route to serve the images
 @app.get('/images/<string:filename>')
 def get_image(filename):
@@ -87,11 +90,11 @@ def get_image(filename):
 
         # Get the first matching file
         file = matching_files[0]
-        URL= 'uploads'
-        return send_file(os.path.join(URL,file),
-                         mimetype='image/jpeg')
+        URL = 'uploads'
+        return send_file(os.path.join(URL, file), mimetype='image/jpeg')
     except Exception as e:
         return jsonify({"error": f"Server error: {str(e)}"}), 500
+
 
 @socketio.on('message')
 def handle_message(data):
@@ -109,6 +112,8 @@ def handle_message(data):
     db.commit()
 
     entry = db_message.to_dict()
+    entry["username"] = db.query(User).filter(
+        User.id == user_id).first().username
 
     entry_json = json.dumps(entry)
     send(entry_json, to=room)
@@ -212,6 +217,7 @@ def get_user(user_id):
     else:
         return jsonify({"error": "User not found"}), 404
 
+
 @app.post('/users/<int:user_id>/update-verification')
 def update_user_verification(user_id):
     try:
@@ -236,7 +242,8 @@ def update_user_verification(user_id):
         valid_statuses = ['NGO', 'SPONSOR', 'PERSON']
         if new_status not in valid_statuses:
             return jsonify({
-                "error": f"Invalid verification status. Must be one of: {', '.join(valid_statuses)}"
+                "error":
+                f"Invalid verification status. Must be one of: {', '.join(valid_statuses)}"
             }), 400
 
         # Update the user
@@ -249,6 +256,7 @@ def update_user_verification(user_id):
         if 'db' in locals():
             db.rollback()
         return jsonify({"error": f"Server error: {str(e)}"}), 500
+
 
 @app.get('/events/<int:event_id>')
 def get_event(event_id):
@@ -305,6 +313,7 @@ def create_event():
 def join_event(event_id):
     db: Session = get_db()
     event = db.query(Event).filter(Event.id == event_id).first()
+    chat = event.chat
 
     if not event:
         return jsonify({"error": "Event not found"}), 404
@@ -312,8 +321,10 @@ def join_event(event_id):
     data = json.loads(request.data)
     user_id = data["user_id"]
     user = db.query(User).filter(User.id == user_id).first()
+    chat.participants.append(user)
 
     event.attendees.append(user)
+    db.chat(chat)
     db.commit()
 
     return jsonify(event.to_dict())

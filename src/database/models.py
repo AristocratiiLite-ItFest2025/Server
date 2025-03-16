@@ -110,5 +110,4 @@ class Entry(Base, SerializableMixin):
         data = super().to_dict()
         db = get_db()
         data["timestamp"]= data["timestamp"].isoformat()
-        data["username"]= db.query(User).filter(User.id == data["user_id"]).first().username
         return data
