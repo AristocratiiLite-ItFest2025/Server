@@ -3,7 +3,7 @@ from typing import Optional
 from sqlalchemy import (VARCHAR, Boolean, Column, DateTime, Enum, Float,
                         ForeignKey, Integer, Table, Text, inspect)
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import object_session, relationship
 from sqlalchemy.sql import func, select
 from sqlalchemy.sql.functions import count
 
@@ -66,7 +66,14 @@ class Event(Base, SerializableMixin):
 
     @hybrid_property
     def attendees_count(self):
-        return len(self.attendees)
+        return object_session(self).query(event_attendees).filter(
+            event_attendees.c.event_id == self.id).count()
+
+    @attendees_count.expression
+    def attendees_count(cls):
+        return select([
+            func.count(event_attendees.c.user_id)
+        ]).where(event_attendees.c.event_id == cls.id).label('attendees_count')
 
     def to_dict(self):
         data = super().to_dict()
