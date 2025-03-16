@@ -2,6 +2,7 @@ from typing import Optional
 
 from sqlalchemy import (VARCHAR, Boolean, Column, DateTime, Enum, Float,
                         ForeignKey, Integer, Table, Text, inspect)
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 from database import Base
@@ -16,7 +17,6 @@ class SerializableMixin:
         }
 
 
-# Association table for many-to-many relationship
 chat_participants = Table(
     'chat_participants', Base.metadata,
     Column('chat_id', Integer, ForeignKey('chats.id'), primary_key=True),
@@ -61,6 +61,17 @@ class Event(Base, SerializableMixin):
     attendees = relationship('User',
                              secondary='event_attendees',
                              back_populates='events')
+
+    @hybrid_property
+    def attendees_count(self):
+        return len(self.attendees)
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["attendees_count"] = self.attendees_count
+        data["attendees"] = [attendee.id for attendee in self.attendees]
+        return data
+
     description = Column(Text, nullable=False)
     author_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     email_for_contact = Column(VARCHAR(255), nullable=True)
@@ -69,8 +80,7 @@ class Event(Base, SerializableMixin):
     end_time = Column(DateTime, nullable=False)
     image = Column(VARCHAR(255))
     icon_image = Column(VARCHAR(255))
-    recurring_duration = Column(
-        VARCHAR(255))  # This should be handled with a library for recurrence
+    recurring_duration = Column(VARCHAR(255))
 
 
 class Chat(Base, SerializableMixin):

@@ -4,7 +4,7 @@ from time import time
 
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, emit, join_room, leave_room, send
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, column_property
 
 from database import get_db, init_db
 from database.models import Chat, Entry, Event, User
@@ -83,13 +83,23 @@ def get_users():
     return jsonify([user.to_dict() for user in users])
 
 
+@app.get('/events')
+def get_events():
+    db: Session = get_db()
+    events = db.query(Event).all()
+    return jsonify([event.to_dict() for event in events])
+
+
 @app.get('/events/<int:user_id>')
-def get_events(user_id):
+def get_events_for_user(user_id):
     db: Session = get_db()
 
     user = db.query(User).filter(User.id == user_id).first()
 
-    return jsonify([event.to_dict() for event in user.events])
+    if user:
+        return jsonify([event.to_dict() for event in user.events])
+
+    return {"error": "User not found"}, 404
 
 
 @app.get('/chats')
