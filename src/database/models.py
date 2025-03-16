@@ -5,7 +5,7 @@ from sqlalchemy import (VARCHAR, Boolean, Column, DateTime, Enum, Float,
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
-from database import Base
+from database import Base, get_db
 
 
 class SerializableMixin:
@@ -102,3 +102,10 @@ class Entry(Base, SerializableMixin):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     timestamp = Column(DateTime, nullable=False)
     text = Column(Text, nullable=False)
+
+    def to_dict(self):
+        data = super().to_dict()
+        db = get_db()
+        data.timestamp = data.timestamp.isoformat()
+        data.username = db.query(User).filter(User.id == data["user_id"]).first().username
+        return data
