@@ -4,6 +4,8 @@ from sqlalchemy import (VARCHAR, Boolean, Column, DateTime, Enum, Float,
                         ForeignKey, Integer, Table, Text, inspect)
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func, select
+from sqlalchemy.sql.functions import count
 
 from database import Base, get_db
 
@@ -64,7 +66,8 @@ class Event(Base, SerializableMixin):
 
     @hybrid_property
     def attendees_count(self):
-        return len(self.attendees)
+        return (select(func.count(event_attendees.c.user_id)).where(
+            event_attendees.c.event_id == self.id).scalar_subquery())
 
     def to_dict(self):
         data = super().to_dict()
@@ -108,5 +111,5 @@ class Entry(Base, SerializableMixin):
 
     def to_dict(self):
         data = super().to_dict()
-        data["timestamp"]= data["timestamp"].isoformat()
+        data["timestamp"] = data["timestamp"].isoformat()
         return data

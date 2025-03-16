@@ -6,8 +6,8 @@ from pprint import pprint
 from time import time
 
 from flask import Flask, jsonify, request, send_file
-from flask_socketio import SocketIO, emit, join_room, leave_room, send
 from flask_cors import CORS
+from flask_socketio import SocketIO, emit, join_room, leave_room, send
 from sqlalchemy.orm import Session, column_property
 
 from database import get_db, init_db
@@ -138,7 +138,8 @@ def on_join(data):
         chat = Chat(id=chat_id, name=f"Chat {chat_id}")
 
     if data["user_id"] not in [p.id for p in chat.participants]:
-        chat.participants.append( db.query(User).filter(User.id == data["user_id"]).first())
+        chat.participants.append(
+            db.query(User).filter(User.id == data["user_id"]).first())
 
     db.add(chat)
     db.commit()
