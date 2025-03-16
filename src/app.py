@@ -7,6 +7,7 @@ from time import time
 
 from flask import Flask, jsonify, request, send_file
 from flask_socketio import SocketIO, emit, join_room, leave_room, send
+from flask_cors import CORS
 from sqlalchemy.orm import Session, column_property
 
 from database import get_db, init_db
@@ -19,6 +20,7 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 init_db()
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app = Flask(__name__)
+CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 
