@@ -22,6 +22,11 @@ chat_participants = Table(
     Column('chat_id', Integer, ForeignKey('chats.id'), primary_key=True),
     Column('user_id', Integer, ForeignKey('users.id'), primary_key=True))
 
+event_attendees = Table(
+    'event_attendees', Base.metadata,
+    Column('event_id', Integer, ForeignKey('events.id'), primary_key=True),
+    Column('user_id', Integer, ForeignKey('users.id'), primary_key=True))
+
 
 class User(Base, SerializableMixin):
     __tablename__ = 'users'
@@ -50,9 +55,9 @@ class Event(Base, SerializableMixin):
     lat = Column(Float, nullable=False)
     lon = Column(Float, nullable=False)
     name = Column(VARCHAR(255), nullable=False)
-    attendees = Column(
-        Integer,
-        default=1)  # This should be a relationship in a real-world scenario
+    attendees = relationship('User',
+                             secondary='event_attendees',
+                             back_populates='events')
     description = Column(Text, nullable=False)
     author_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     email_for_contact = Column(VARCHAR(255), nullable=True)

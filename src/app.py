@@ -50,7 +50,6 @@ def on_join(data):
     room = f"CHAT{chat_id}"
 
     join_room(room)
-    send("User joined", to=room)
 
 
 @socketio.on('leave')
@@ -87,7 +86,10 @@ def get_users():
 @app.get('/events')
 def get_events():
     db: Session = get_db()
-    events = db.query(Event).all()
+    data = json.loads(request.data)
+    user = db.query(User).filter(User.id == data["user_id"]).first()
+    events = db.query(Event).filter(Event.attendees.contains(user)).all()
+
     return jsonify([event.to_dict() for event in events])
 
 
@@ -160,8 +162,27 @@ def create_event():
     db: Session = get_db()
     data = json.loads(request.data)
     event = Event(**data)
+
     db.add(event)
     db.commit()
+    return jsonify(event.to_dict())
+
+
+@app.post('/events/<int:event_id>/join')
+def join_event(event_id):
+    db: Session = get_db()
+    event = db.query(Event).filter(Event.id == event_id).first()
+
+    if not event:
+        return jsonify({"error": "Event not found"}), 404
+
+    data = json.loads(request.data)
+    user_id = data["user_id"]
+    user = db.query(User).filter(User.id == user_id).first()
+
+    event.attendees.append(user)
+    db.commit()
+
     return jsonify(event.to_dict())
 
 
